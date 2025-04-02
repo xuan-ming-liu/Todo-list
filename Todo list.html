@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多功能 Todo List</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        body {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 25px;
+        }
+        .search-box {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        #searchInput {
+            width: 100%;
+            padding: 12px 40px 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+        #searchInput:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #aaa;
+            pointer-events: none;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .input-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #taskInput {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .addon-inputs {
+            display: grid;
+            grid-template-columns: 1fr 180px;
+            gap: 10px;
+        }
+        #noteInput {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+        #timeInput {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+        button {
+            padding: 12px 24px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            height: fit-content;
+            align-self: center;
+        }
+        button:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+        }
+        #todoList {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .todo-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            transition: all 0.3s;
+            cursor: move;
+            background: white;
+            position: relative;
+        }
+        .todo-item.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .todo-item.over {
+            border-top: 2px solid #007bff;
+        }
+        .todo-item:hover {
+            background: #f9f9f9;
+        }
+        .todo-item input[type="checkbox"] {
+            margin-right: 15px;
+            transform: scale(1.3);
+            cursor: pointer;
+            margin-top: 3px;
+        }
+        .task-content {
+            flex: 1;
+            min-width: 0;
+        }
+        .todo-text {
+            margin: 0 0 5px 0;
+            word-break: break-word;
+            cursor: text;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        .todo-text[contenteditable="true"] {
+            background: #fffde7;
+            padding: 5px;
+            border-radius: 4px;
+        }
+        .task-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 0.85em;
+            margin-top: 5px;
+        }
+        .meta-item {
+            display: flex;
+            align-items: center;
+            color: #666;
+        }
+        .meta-item span:first-child {
+            color: #007bff;
+            margin-right: 5px;
+            font-size: 0.9em;
+        }
+        .completed {
+            text-decoration: line-through;
+            color: #999;
+        }
+        .delete-btn {
+            background: #ff4444;
+            padding: 8px 15px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        .delete-btn:hover {
+            background: #cc0000;
+        }
+        .empty-tip {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+        }
+        .time-badge {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8em;
+        }
+        @media (max-width: 480px) {
+            .input-group {
+                flex-direction: column;
+            }
+            .addon-inputs {
+                grid-template-columns: 1fr;
+            }
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Today Assignments</h1>
+    
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search...">
+        <span class="search-icon">🔍</span>
+    </div>
+
+    <div class="input-group">
+        <div class="input-container">
+            <input 
+                type="text" 
+                id="taskInput" 
+                placeholder="任务内容..."
+                autofocus
+            >
+            <div class="addon-inputs">
+                <input 
+                    type="text" 
+                    id="noteInput" 
+                    placeholder="备注..."
+                >
+                <input 
+                    type="datetime-local" 
+                    id="timeInput" 
+                    class="time-input"
+                >
+            </div>
+        </div>
+        <button onclick="addTodo()">添加</button>
+    </div>
+
+    <div id="todoList"></div>
+
+    <script>
+        // 初始化数据
+        let todos = JSON.parse(localStorage.getItem('todos')) || [];
+        let dragStartId = null;
+
+        // DOM加载完成后渲染
+        document.addEventListener('DOMContentLoaded', () => {
+            // 设置时间输入默认值为当前时间+1小时
+            const now = new Date();
+            now.setHours(now.getHours() + 1);
+            document.getElementById('timeInput').value = formatDateTimeLocal(now);
+            
+            renderTodos();
+            initDragDrop();
+        });
+
+        // 添加任务
+        function addTodo() {
+            const taskInput = document.getElementById('taskInput');
+            const noteInput = document.getElementById('noteInput');
+            const timeInput = document.getElementById('timeInput');
+            
+            const text = taskInput.value.trim();
+            const note = noteInput.value.trim();
+            const time = timeInput.value;
+            
+            if (!text) {
+                alert('任务标题不能为空');
+                taskInput.focus();
+                return;
+            }
+
+            const newTodo = {
+                id: Date.now(),
+                text: text,
+                note: note || null,
+                time: time || null,
+                completed: false,
+                createdAt: new Date().toISOString()
+            };
+
+            todos.unshift(newTodo);
+            saveToLocalStorage();
+            
+            // 清空输入框
+            taskInput.value = '';
+            noteInput.value = '';
+            timeInput.value = formatDateTimeLocal(new Date());
+            
+            renderTodos();
+            taskInput.focus();
+        }
+
+        // 删除任务
+        function deleteTodo(id) {
+            if (!confirm('确定要删除这个任务吗？')) return;
+            
+            todos = todos.filter(todo => todo.id !== id);
+            saveToLocalStorage();
+            renderTodos();
+        }
+
+        // 切换完成状态
+        function toggleComplete(id) {
+            todos = todos.map(todo => {
+                if (todo.id === id) {
+                    return { ...todo, completed: !todo.completed };
+                }
+                return todo;
+            });
+            saveToLocalStorage();
+            renderTodos();
+        }
+
+        // 编辑任务标题
+        function editTodo(id, newText) {
+            if (!newText.trim()) {
+                alert('任务标题不能为空');
+                renderTodos();
+                return;
+            }
+
+            todos = todos.map(todo => {
+                if (todo.id === id) {
+                    return { ...todo, text: newText.trim() };
+                }
+                return todo;
+            });
+            saveToLocalStorage();
+        }
+
+        // 保存到本地存储
+        function saveToLocalStorage() {
+            localStorage.setItem('todos', JSON.stringify(todos));
+        }
+
+        // 渲染任务列表
+        function renderTodos(searchTerm = '') {
+            const container = document.getElementById('todoList');
+            const searchValue = searchTerm.toLowerCase();
+            
+            const filteredTodos = searchTerm 
+                ? todos.filter(todo => 
+                    todo.text.toLowerCase().includes(searchValue) ||
+                    (todo.note && todo.note.toLowerCase().includes(searchValue)))
+                : todos;
+
+            if (filteredTodos.length > 0) {
+                container.innerHTML = filteredTodos.map(todo => `
+                    <div class="todo-item" data-id="${todo.id}" draggable="true">
+                        <input 
+                            type="checkbox" 
+                            ${todo.completed ? 'checked' : ''} 
+                            onchange="toggleComplete(${todo.id})"
+                        >
+                        <div class="task-content">
+                            <div 
+                                class="todo-text ${todo.completed ? 'completed' : ''}" 
+                                contenteditable="true"
+                                onblur="editTodo(${todo.id}, this.innerText)"
+                            >${todo.text}</div>
+                            
+                            <div class="task-meta">
+                                ${todo.note ? `
+                                    <div class="meta-item">
+                                        <span>📝</span>
+                                        <span>${todo.note}</span>
+                                    </div>
+                                ` : ''}
+                                
+                                ${todo.time ? `
+                                    <div class="meta-item">
+                                        <span>⏰</span>
+                                        <span class="time-badge">${formatTimeDisplay(todo.time)}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        <button class="delete-btn" onclick="deleteTodo(${todo.id})">删除</button>
+                    </div>
+                `).join('');
+            } else {
+                const message = todos.length === 0 
+                    ? '暂无任务，添加你的第一个任务吧！' 
+                    : '没有找到匹配的任务';
+                container.innerHTML = `<div class="empty-tip">${message}</div>`;
+            }
+            
+            initDragDrop();
+            checkTaskReminders();
+        }
+
+        // 初始化拖放事件
+        function initDragDrop() {
+            document.querySelectorAll('.todo-item').forEach(item => {
+                item.addEventListener('dragstart', handleDragStart);
+                item.addEventListener('dragover', handleDragOver);
+                item.addEventListener('drop', handleDrop);
+                item.addEventListener('dragend', handleDragEnd);
+            });
+        }
+
+        // 拖动开始
+        function handleDragStart(e) {
+            dragStartId = Number(this.dataset.id);
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', this.dataset.id);
+        }
+
+        // 拖动经过处理
+        function handleDragOver(e) {
+            e.preventDefault();
+            const currentItem = document.querySelector('.dragging');
+            if (!currentItem || this === currentItem) return;
+
+            const rect = this.getBoundingClientRect();
+            const middleY = rect.top + rect.height / 2;
+            const isBefore = e.clientY < middleY;
+
+            // 清除所有over状态
+            document.querySelectorAll('.todo-item').forEach(item => {
+                item.classList.remove('over');
+            });
+
+            // 显示插入位置提示
+            if (isBefore) {
+                this.classList.add('over');
+            }
+        }
+
+        // 放置处理
+        function handleDrop(e) {
+            e.preventDefault();
+            const dragId = Number(e.dataTransfer.getData('text/plain'));
+            const dropId = Number(this.dataset.id);
+            const isBefore = this.classList.contains('over');
+
+            if (dragId === dropId) return;
+
+            // 移动项目
+            const dragIndex = todos.findIndex(t => t.id === dragId);
+            const dropIndex = todos.findIndex(t => t.id === dropId);
+            
+            if (dragIndex === -1 || dropIndex === -1) return;
+
+            // 计算新位置
+            let newIndex = isBefore ? dropIndex : dropIndex + 1;
+            if (dragIndex < newIndex) newIndex--;
+
+            // 执行移动
+            const [movedItem] = todos.splice(dragIndex, 1);
+            todos.splice(newIndex, 0, movedItem);
+
+            saveToLocalStorage();
+            renderTodos(document.getElementById('searchInput').value);
+        }
+
+        // 拖动结束
+        function handleDragEnd() {
+            this.classList.remove('dragging', 'over');
+        }
+
+        // 时间格式化
+        function formatTimeDisplay(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleString('zh-CN', {
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            }).replace(/\//g, '-');
+        }
+
+        // 转换为datetime-local格式
+        function formatDateTimeLocal(date) {
+            return date.toISOString().slice(0, 16);
+        }
+
+        // 任务提醒检查
+        function checkTaskReminders() {
+            const now = new Date();
+            todos.forEach(todo => {
+                if (!todo.completed && todo.time) {
+                    const taskTime = new Date(todo.time);
+                    const diff = taskTime - now;
+                    
+                    // 如果任务时间在未来5分钟内
+                    if (diff > 0 && diff < 300000) {
+                        const mins = Math.ceil(diff / 60000);
+                        alert(`【即将开始】\n任务：${todo.text}\n${mins}分钟后开始`);
+                    }
+                }
+            });
+        }
+
+        // 搜索功能
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            renderTodos(e.target.value);
+        });
+
+        // 回车提交
+        document.getElementById('taskInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addTodo();
+        });
+
+        // 编辑时按回车保存
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && e.target.classList.contains('todo-text')) {
+                e.target.blur();
+            }
+        });
+
+        // 每分钟检查一次提醒
+        setInterval(checkTaskReminders, 60000);
+    </script>
+</body>
+</html>
